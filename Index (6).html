@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NostalDraw </title>
+<style>
+  body {
+    margin: 0;
+    background: #5D5367;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: sans-serif;
+    user-select: none;
+  }
+  #toolbar {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  button {
+    margin: 0 5px;
+    padding: 8px 12px;
+    border: none;
+    background: #3A3141;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #fff;
+  }
+  button.active {
+    background: #2a75ff;
+    color: #000000ff;
+  }
+  input[type="color"], input[type="range"] {
+    margin: 0 8px;
+  }
+  canvas {
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 10px;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button id="brush" class="active">🖌️ Brush</button>
+  <button id="bucket">🪣 Bucket</button>
+  <button id="eraser">🧽 Eraser</button>
+  <button id="highlighter">🖍️ Highlighter</button>
+  <button id="line">📏 Line</button>
+  <input type="color" id="colorPicker" value="#2a75ff">
+  <input type="range" id="size" min="5" max="50" value="15">
+  <button id="clear">🗑️ Clear</button>
+</div>
+
+<canvas id="canvas" width="900" height="550"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let painting = false;
+let tool = "brush";
+let brushColor = document.getElementById("colorPicker").value;
+let brushSize = document.getElementById("size").value;
+let startX, startY;
+
+// 🎨 Start drawing
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mouseup", stopDraw);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseleave", () => (painting = false));
+
+function startDraw(e) {
+  painting = true;
+  startX = e.offsetX;
+  startY = e.offsetY;
+
+  if (tool === "bucket") {
+    fillCanvas();
+  } else if (tool === "line") {
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+  } else {
+    draw(e);
+  }
+}
+
+function stopDraw(e) {
+  if (tool === "line" && painting) {
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = "round";
+    ctx.stroke();
+  }
+  painting = false;
+  ctx.beginPath();
+}
+
+function draw(e) {
+  if (!painting) return;
+  const x = e.offsetX;
+  const y = e.offsetY;
+
+  if (tool === "brush") {
+        ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize * 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 0.1, y + 0.1);
+    ctx.stroke();
+  }
+
+  if (tool === "eraser") {
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.clearRect(x - brushSize / 3, y - brushSize / 3, brushSize, brushSize);
+  }
+
+  if (tool === "highlighter") {
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize * 1.5;
+    ctx.lineCap = "round";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  if (tool === "clear") {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function fillCanvas() {
+  ctx.fillStyle = brushColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+// Toolbar controls
+document.getElementById("colorPicker").oninput = e => brushColor = e.target.value;
+document.getElementById("size").oninput = e => brushSize = e.target.value;
+document.getElementById("clear").onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+// Tool selection
+document.querySelectorAll("#toolbar button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("#toolbar button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    tool = btn.id;
+  };
+});
+</script>
+
+</body>
+</html>
